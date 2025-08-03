@@ -1,12 +1,6 @@
 [submodule "third_party/entt"]
 	path = third_party/entt
 	url = https://github.com/skypjack/entt.git
-[submodule "third_party/DiligentCore"]
-	path = third_party/DiligentCore
-	url = https://github.com/DiligentGraphics/DiligentCore.git
-[submodule "third_party/DiligentFX"]
-	path = third_party/DiligentFX
-	url = https://github.com/DiligentGraphics/DiligentFX.git
-[submodule "third_party/DiligentTools"]
-	path = third_party/DiligentTools
-	url = https://github.com/DiligentGraphics/DiligentTools.git
+[submodule "third_party/DiligentEngine"]
+	path = third_party/DiligentEngine
+	url = https://github.com/DiligentGraphics/DiligentEngine.git
