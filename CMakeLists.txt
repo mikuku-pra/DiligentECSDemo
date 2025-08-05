@@ -4,24 +4,24 @@ project(DiligentECSDemo LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 设置 Vulkan SDK 路径环境变量（请根据你本地实际路径修改）
-set(ENV{VULKAN_SDK} "D:/file/vulkanSdk")
-set(Vulkan_INCLUDE_DIR "$ENV{VULKAN_SDK}/Include")
-set(Vulkan_LIBRARY "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
+# ===== 后端支持开关 =====
+option(D3D11_SUPPORTED "Enable D3D11 backend" OFF)
+option(D3D12_SUPPORTED "Enable D3D12 backend" OFF)
+option(VULKAN_SUPPORTED "Enable Vulkan backend" ON)
+option(GL_SUPPORTED "Enable OpenGL backend" OFF)
 
+set(PLATFORM_WIN32 ON)
+
+add_subdirectory(third_party/DiligentEngine/DiligentSamples/ThirdParty/glfw)
+
+# ===== Vulkan SDK =====
 find_package(Vulkan REQUIRED)
 
-if(NOT TARGET Vulkan::Vulkan)
-    add_library(Vulkan::Vulkan UNKNOWN IMPORTED)
-    set_target_properties(Vulkan::Vulkan PROPERTIES
-        IMPORTED_LOCATION "${Vulkan_LIBRARY}"
-        INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIR}"
-    )
-endif()
-
+# ===== 添加子模块 =====
 add_subdirectory(third_party/DiligentEngine)
 add_subdirectory(third_party/entt)
 
+# ===== 源文件 =====
 file(GLOB_RECURSE DEMO_SRC CONFIGURE_DEPENDS
     src/*.cpp
     src/*.h
@@ -29,15 +29,49 @@ file(GLOB_RECURSE DEMO_SRC CONFIGURE_DEPENDS
 
 add_executable(${PROJECT_NAME} ${DEMO_SRC})
 
-target_link_libraries(${PROJECT_NAME}
-    DiligentEngine
-    Vulkan::Vulkan
+# ===== Include路径 =====
+target_include_directories(${PROJECT_NAME} PRIVATE
+    third_party/entt/single_include
+    third_party/DiligentEngine
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE third_party/entt/single_include)
+# ===== 编译宏定义 =====
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    PLATFORM_WIN32
+    ENGINE_DLL=1
+    UNICODE
+)
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-    third_party/DiligentEngine/Components
-    third_party/DiligentEngine/DiligentCore
-    third_party/DiligentEngine/Platforms
+# ===== 链接基础模块 =====
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Diligent-BuildSettings
+    Diligent-GraphicsTools
+    Diligent-BasicPlatform
+    Diligent-PlatformInterface
+    glfw
+)
+
+# ===== 后端链接控制 =====
+if(D3D11_SUPPORTED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Diligent-GraphicsEngineD3D11-shared)
+endif()
+
+if(D3D12_SUPPORTED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Diligent-GraphicsEngineD3D12-shared)
+endif()
+
+if(VULKAN_SUPPORTED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Diligent-GraphicsEngineVk-shared Vulkan::Vulkan)
+endif()
+
+if(GL_SUPPORTED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Diligent-GraphicsEngineOpenGL-shared)
+endif()
+
+# ===== 可选：拷贝运行所需 DLL =====
+copy_required_dlls(${PROJECT_NAME})
+
+# ===== 设置 VS 工程文件夹（可选）=====
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    FOLDER DiligentSamples/ECSDemo
 )
